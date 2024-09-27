@@ -12,8 +12,12 @@ from .serializers import (
     UserInformationSerializer,
     ChangedPasswordSerializer,
     EmailVerificationSerializer,
-  
-   
+    CustomerSerializer,
+    CustomerRegistrationSerializer,
+    GetCustomerProfileSerializer,
+    SellerSerializer,
+    SellerRegistrationSerializer,
+    GetSellerProfileSerializer
 )
 from ecommerce.models import Customer, Seller
 from .models import User
