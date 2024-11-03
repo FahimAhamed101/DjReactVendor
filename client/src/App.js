@@ -1,7 +1,7 @@
 import logo from './logo.svg';
 import './App.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from './containers/Home';
+import Products from './views/store/Products'
 import Register from './views/auth/Register'
 import Login from './views/auth/Login'
 import Logout from './views/auth/Logout'
@@ -16,7 +16,7 @@ function App() {
      <StoredHeader />
      <MainWrapper>
         <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path='/' element={<Products />} />
                           
                           
                           
