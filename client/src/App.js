@@ -10,6 +10,7 @@ import CreatePassword from './views/auth/CreatePassword'
 import Account from './views/customer/Account'
 import StoredHeader from './views/base/StoredHeader'
 import MainWrapper from './views/base/MainWrapper'
+import ProductDetail from './views/store/ProductDetail'
 function App() {
   return (
     <Router>
@@ -18,7 +19,7 @@ function App() {
         <Routes>
         <Route path='/' element={<Products />} />
                           
-                          
+        <Route path='/product-detail/:slug' element={<ProductDetail />} />     
                           
         <Route path='/register' element={<Register />} />
         <Route path="/login" element={<Login />} />
