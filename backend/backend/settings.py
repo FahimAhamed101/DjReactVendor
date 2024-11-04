@@ -37,10 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-     'userauths',
-     'vendor',
-     'store',
-     'api',  'rest_framework_simplejwt',
+  "userauths",
+    "api",
+    "store",
+ 
+    'vendor',
+     'rest_framework_simplejwt',
       'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
    
@@ -141,7 +143,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-
+MEDIA_URL = 'media/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

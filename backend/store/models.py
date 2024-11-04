@@ -14,7 +14,7 @@ class Category(models.Model):
     title = models.CharField(max_length=100)
     image = models.FileField(upload_to="category", default="category.jpg", null=True, blank=True)
     active = models.BooleanField(default=True)
-    slug = models.SlugField(unique=True,null=True)
+    slug = models.SlugField(unique=True, null=True)
 
     def __str__(self):
         return self.title
@@ -44,10 +44,10 @@ class Product(models.Model):
     featured = models.BooleanField(default=False)
     views= models.PositiveIntegerField(default=0)
     rating = models.PositiveIntegerField(default=0,null=True, blank=True)
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE,null=True)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, null=True)
     pid = ShortUUIDField(unique=True, length=10, alphabet="abcdefg123456")
-    slug = models.SlugField(unique=True,null=True)
-    date = models.DateTimeField(auto_now_add=True,null=True)
+    slug = models.SlugField(unique=True, null=True)
+    date = models.DateTimeField(auto_now_add=True, null=True)
 
     def save(self,*args, **kwargs):
         if self.slug == "" or self.slug== None:
@@ -82,10 +82,10 @@ class Product(models.Model):
 
 
 class Gallery(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE,null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
     image = models.FileField(upload_to="products",default="product.jpg")
     active = models.BooleanField(default=True)
-    date=models.DateTimeField(auto_now_add=True,null=True)
+    date=models.DateTimeField(auto_now_add=True, null=True)
     gid=ShortUUIDField(unique=True, length=10,alphabet="abcdefg123456")
 
     class Meta:
@@ -96,20 +96,20 @@ class Gallery(models.Model):
     
 
 class Specification(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE,null=True)
-    title = models.CharField(max_length=1000,null=True)
-    content=models.CharField(max_length=1000,null=True)
-    date=models.DateTimeField(auto_now_add=True,null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
+    title = models.CharField(max_length=1000, null=True)
+    content=models.CharField(max_length=1000, null=True)
+    date=models.DateTimeField(auto_now_add=True, null=True)
 
     def __str__(self):
         return self.title
 
 
 class Size(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE,null=True)
-    name = models.CharField(max_length=1000,null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
+    name = models.CharField(max_length=1000, null=True)
     price = models.DecimalField(decimal_places=2, max_digits=12, default=0.00)
-    date=models.DateTimeField(auto_now_add=True,null=True)
+    date=models.DateTimeField(auto_now_add=True, null=True)
 
 
     def __str__(self):
@@ -117,9 +117,9 @@ class Size(models.Model):
    
 
 class Color(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE,null=True)
-    name = models.CharField(max_length=1000,null=True)
-    color_code = models.CharField(max_length=1000,null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
+    name = models.CharField(max_length=1000, null=True)
+    color_code = models.CharField(max_length=1000, null=True)
 
 
     def __str__(self):
@@ -129,7 +129,7 @@ class Color(models.Model):
 
 
 class Cart(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE,null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     qty = models.PositiveIntegerField(default=0, null=True, blank=True)
     price = models.DecimalField(decimal_places=2, max_digits=12, default=0.00, null=True, blank=True)
@@ -142,7 +142,7 @@ class Cart(models.Model):
     size = models.CharField(max_length=100, null=True, blank=True)
     color = models.CharField(max_length=100, null=True, blank=True)
     cart_id = models.CharField(max_length=1000, null=True, blank=True)
-    date = models.DateTimeField(auto_now_add=True,null=True)
+    date = models.DateTimeField(auto_now_add=True, null=True)
 
     def __str__(self):
         return f'{self.cart_id} - {self.product.title}'
@@ -173,7 +173,7 @@ class CartOrder(models.Model):
         ("Cancelled", "Cancelled"),
         
     )
-    vendor = models.ManyToManyField(Vendor, blank=True,null=True)
+    vendor = models.ManyToManyField(Vendor, blank=True)
     buyer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="buyer", blank=True)
     sub_total = models.DecimalField(default=0.00, max_digits=12, decimal_places=2)
     shipping_amount = models.DecimalField(default=0.00, max_digits=12, decimal_places=2)
@@ -197,7 +197,7 @@ class CartOrder(models.Model):
 
     
     oid = ShortUUIDField(length=10, max_length=25, alphabet="abcdefghijklmnopqrstuvxyz")
-    date = models.DateTimeField(default=timezone.now,null=True)
+    date = models.DateTimeField(default=timezone.now, null=True)
     
     class Meta:
         ordering = ["-date"]
@@ -233,7 +233,7 @@ class CartOrderItem(models.Model):
     initial_total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Grand Total of all amount listed above before discount")
     saved = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, null=True, blank=True, help_text="Amount saved by customer")   
     oid = ShortUUIDField(length=10, max_length=25, alphabet="abcdefghijklmnopqrstuvxyz")
-    date = models.DateTimeField(default=timezone.now,null=True)
+    date = models.DateTimeField(default=timezone.now, null=True)
 
 
     def __str__(self):
@@ -242,13 +242,13 @@ class CartOrderItem(models.Model):
 
 
 class ProductFaq(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE,null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
     email= models.EmailField(null=True, blank=True)
     question= models.CharField(max_length=1000)
     answer= models.TextField(null=True, blank=True)
     active= models.BooleanField(default=False)    
-    date = models.DateTimeField(auto_now_add=True,null=True)
+    date = models.DateTimeField(auto_now_add=True, null=True)
 
     def __str__(self):
         return self.question
@@ -273,7 +273,7 @@ class Review(models.Model):
     active = models.BooleanField(default=False)
     helpful = models.ManyToManyField(User, blank=True, related_name="helpful")
     not_helpful = models.ManyToManyField(User, blank=True, related_name="not_helpful")
-    date = models.DateTimeField(auto_now_add=True,null=True)
+    date = models.DateTimeField(auto_now_add=True, null=True)
     
     class Meta:
         verbose_name_plural = "Reviews & Rating"
@@ -296,7 +296,7 @@ def update_product_rating(sender, instance,  **kwargs):
 class Wishlist(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="wishlist")
-    date = models.DateTimeField(auto_now_add=True,null=True)
+    date = models.DateTimeField(auto_now_add=True, null=True)
     
     class Meta:
         verbose_name_plural = "Wishlist"
@@ -317,7 +317,7 @@ class Notification(models.Model):
     order = models.ForeignKey(CartOrder, on_delete=models.SET_NULL, null=True, blank=True)
     order_item = models.ForeignKey(CartOrderItem, on_delete=models.SET_NULL, null=True, blank=True)
     seen = models.BooleanField(default=False)
-    date = models.DateTimeField(auto_now_add=True,null=True)
+    date = models.DateTimeField(auto_now_add=True, null=True)
     
     class Meta:
         verbose_name_plural = "Notification"
@@ -335,7 +335,7 @@ class Coupon(models.Model):
     used_by = models.ManyToManyField(User, blank=True)
     code = models.CharField(max_length=1000)
     discount = models.IntegerField(default=1)
-    date = models.DateTimeField(auto_now_add=True,null=True)
+    date = models.DateTimeField(auto_now_add=True, null=True)
     active = models.BooleanField(default=True)
    
     def __str__(self):
@@ -347,7 +347,7 @@ class Tax(models.Model):
     country = models.CharField(max_length=100)
     rate = models.IntegerField(default=5, help_text='Number added here are in precentage e.g 5%')
     active = models.BooleanField(default=True)
-    date = models.DateTimeField(auto_now_add=True,null=True)
+    date = models.DateTimeField(auto_now_add=True, null=True)
 
 
     def __str__(self):
