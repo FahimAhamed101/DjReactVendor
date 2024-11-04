@@ -102,13 +102,14 @@ export const setAuthUser = (access_token, referesh_token) => {
     if (user) {
         useAuthStore.getState().setUser(user)
     }
+    
     useAuthStore.getState().setLoading(false)
 }
 
 
 export const getRefreshToken = async () => {
     const referesh_token = Cookies.get("refresh_token")
-    const response = await axios.post('user/token/refresh/',{
+    const response = await axios.post('api/v1/user/token/refresh/',{
         refresh: referesh_token
     })
 
