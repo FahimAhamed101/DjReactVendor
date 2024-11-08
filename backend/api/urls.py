@@ -4,14 +4,17 @@ from userauths import views as userauths_views
 from store import views as store_views
 
 
-from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 
 urlpatterns = [
 
 
- path('user/token/', userauths_views.MyTokenOptainPairView.as_view()),
-    path('user/token/refresh/', TokenRefreshView.as_view()),
+ path('user/token/', TokenObtainPairView.as_view()),
+    path('user/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('user/register/', userauths_views.RegisterView.as_view()),
     path('user/password-reset/<email>/', userauths_views.PasswordRestEmailVerify.as_view()),
     path('user/password-change/', userauths_views.PasswordChangeView.as_view()),
