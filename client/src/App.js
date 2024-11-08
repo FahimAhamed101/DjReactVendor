@@ -12,6 +12,7 @@ import StoredHeader from './views/base/StoredHeader'
 import MainWrapper from './views/base/MainWrapper'
 import ProductDetail from './views/store/ProductDetail'
 import PrivateRoute from './layout/PrivateRoute'
+import Dashboard from './views/vendor/Dashboard'
 function App() {
   return (
     <Router>
@@ -28,6 +29,7 @@ function App() {
         <Route path='/forget-password' element={<ForgetPassword />} />
         <Route path='/create-new-password' element={<CreatePassword />} />
         <Route path='/customer/account/' element={<PrivateRoute><Account /></PrivateRoute>} />
+        <Route path='/vendor/dashboard/' element={<Dashboard />} />
         </Routes> 
          </MainWrapper>
      </Router>
