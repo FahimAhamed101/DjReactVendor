@@ -18,6 +18,7 @@ import { CartContext } from './views/plugin/Context'
 import CartID from './views/plugin/CartID'
 import UserData from './views/plugin/UserData'
 import apiInstance from './utils/axioxs'
+import Search from './views/store/Search'
 function App() {
 
  const [count, setCount] = useState(0)
@@ -54,6 +55,7 @@ function App() {
         <Route path='/create-new-password' element={<CreatePassword />} />
         <Route path='/customer/account/' element={<Account />} />
         <Route path='/vendor/dashboard/' element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+        <Route path='/search/' element={<Search />} />
         </Routes> 
          </MainWrapper>
      </Router>
