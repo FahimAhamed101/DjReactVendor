@@ -37,11 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-  "userauths",
+  
     "api",
     "store",
- 
-    'vendor',
+ "userauths",
+   'drf_yasg',
      'rest_framework_simplejwt',
       'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
@@ -149,7 +149,7 @@ MEDIA_URL = 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'userauths.User'
+
 
 from datetime import timedelta
 
@@ -231,3 +231,5 @@ SOCIALACCOUNT_PROVIDERS = {
     },
     # Add more providers if needed
 }
+
+AUTH_USER_MODEL = 'userauths.User'

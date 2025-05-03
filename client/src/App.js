@@ -17,7 +17,7 @@ import Cart from './views/store/Cart'
 import { CartContext } from './views/plugin/Context'
 import CartID from './views/plugin/CartID'
 import UserData from './views/plugin/UserData'
-import apiInstance from './utils/axioxs'
+import apiInstance from "./utils/axios";
 import Search from './views/store/Search'
 function App() {
 

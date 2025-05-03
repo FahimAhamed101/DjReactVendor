@@ -1,24 +1,29 @@
-import { create } from 'zustand'
-import { mountStoreDevtool } from 'simple-zustand-devtools'
-
+import { create } from "zustand";
+import { mountStoreDevtool } from "simple-zustand-devtools";
 
 const useAuthStore = create((set, get) => ({
-    allUserData: null,
-    loading: false,
+  allUserData: null,
+  loading: false,
+  isLoggedIn: false,
+  user: null,
 
-    user: () => ({
-        user_id: get().allUserData?.user_id || null,
-        username: get().allUserData?.username || null,
+  setUser: (user) =>
+    set({
+      allUserData: user,
+      isLoggedIn: user !== null,
+      user: user
+        ? {
+            user_id: user.user_id,
+            username: user.username,
+          }
+        : null,
     }),
-    
-    setUser: (user) => set({ allUserData: user }),
-    setLoading: (loading) => set({ loading }),
-    isLoggedIn: () => get().allUserData !== null,
-}))
+  setLoading: (loading) => set({ loading }),
+}));
 
+// For development only
+if (process.env.NODE_ENV === 'development') {
+    mountStoreDevtool("Store", useAuthStore);
+  }
 
-export { useAuthStore }
-
-
-
-export default useAuthStore
+export { useAuthStore };

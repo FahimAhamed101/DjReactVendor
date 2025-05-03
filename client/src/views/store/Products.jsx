@@ -1,304 +1,711 @@
-import React, {useState, useEffect, useContext} from 'react'
-import apiInstance from '../../utils/axioxs'
-import { useNavigate, Link } from 'react-router-dom'
-import UserData from '../plugin/UserData'
+import { useEffect, useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
+import apiInstance from "../../utils/axios";
+import GetCurrentAddress from "../plugin/UserCountry";
+import UserData from "../plugin/UserData";
+import CartID from "../plugin/CartID";
+import { CartContext } from "../plugin/Context";
 
-import Swal from 'sweetalert2'
-
-
-
-const Toast = Swal.mixin({
-  toast:"true",
-  position:"top",
-  showConfirmButton: false,
-  timer: 1500,
-
-  timerProgressBar: false
-})
-
-
+import { Toast, AlertFailed } from "../base/Alert";
 
 function Products() {
-    const [products, setProducts]=useState([])
-    const [category, setCategory]=useState([])
+  // Initialization for Products and Category
+  const [products, setProducts] = useState([]);
+  const [category, setCategory] = useState([]);
 
-    const [colorValue, setColorValue] = useState("No Color")
-    const [sizeValue, setSizeValue] = useState("No Size")
+  // Color Selector and Picker
+  const [selectedColors, setSelectedColors] = useState({});
 
-    const [selectedProduct, setSelectedProduct] = useState(null)
-    const [selectedColors, setSelectedColors] = useState({})
-    const [selectedSize, setSelectedSize] = useState({})
+  // Variations Selector and Picker
+  const [selectedSizes, setSelectedSizes] = useState({});
 
-    const [qtyValue, setQtyValue] = useState(1)
+  // Quantity Value
+  const [qtyValues, setQtyValues] = useState({});
 
+  // Selected Product
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
+  const [cartCount, setCartCount] = useContext(CartContext);
 
+  const currentAddress = GetCurrentAddress();
+  const userData = UserData();
+  const cartID = CartID();
 
-    const userData = UserData()
-  
+  const navigate = useNavigate();
 
+  const handleSizeButton = (productId, sizeName) => {
+    setSelectedSizes((prev) => ({ ...prev, [productId]: sizeName }));
+  };
 
+  const handleColorButton = (productId, colorName) => {
+    setSelectedColors((prev) => ({ ...prev, [productId]: colorName }));
+  };
 
+  const handleQtyChange = (event, productId) => {
+    const newQty = parseInt(event.target.value, 10) || 1;
+    setQtyValues((prev) => ({
+      ...prev,
+      [productId]: newQty,
+    }));
+    setSelectedProduct(productId);
+  };
 
-
-    const handleColorButtonClick = (event, product_id, colorName) => {
-      setColorValue(colorName)
-      setSelectedProduct(product_id)
-      setSelectedColors((prevSelectedColors) => ({
-        ...prevSelectedColors,
-        [product_id]: colorName
-      }))
-    }
-
-    const handleSizeButtonClick = (event, product_id, sizeName) => {
-      setSizeValue(sizeName)
-      setSelectedProduct(product_id)
-      setSelectedSize((prevSelectedSize) => ({
-        ...prevSelectedSize,
-        [product_id]: sizeName
-      }))
-    }
-
-      console.log(selectedSize)
-      //console.log(selectedProduct)
-
-    const handleQtyChange = (event, product_id) => {
-        setQtyValue(event.target.value);
-        setSelectedProduct(product_id);
-    };  
-
-
-
-    useEffect(() => {
-        apiInstance.get(`product/`).then((response) => {
-            setProducts(response.data)
-        })
-
-        
-    }, [] )
-
-    useEffect(() => {
-      
-
-      apiInstance.get(`category/`).then((response) => {
-        setCategory(response.data)
-      })
-  }, [] )
-
-  const handleAddToCart = async (product_id, product_price,product_shipping_amount) => {
+  const handleAddToCart = async (
+    productId,
+    price,
+    shippingAmount,
+    hasVariations,
+    product
+  ) => {
     try {
-      const formdata = new FormData()
+      const formData = new FormData();
+      const qty = hasVariations ? qtyValues[productId] || 1 : 1;
 
-      formdata.append("product_id", product_id)
-      formdata.append("user_id", userData?.user_id)
-      formdata.append("qty",qtyValue)
-      formdata.append("price", product_price)
-      formdata.append("shipping_amount", product_shipping_amount)
-     
-      formdata.append("size", sizeValue)
-      formdata.append("color", colorValue)
-  
+      // Validate required selections
+      const missing = [];
+      if (product.size?.length > 0 && !selectedSizes[productId])
+        missing.push("size");
+      if (product.color?.length > 0 && !selectedColors[productId])
+        missing.push("color");
 
-      const response = await apiInstance.post(`cart-view/`,formdata)
-      console.log(response.data);
+      if (missing.length > 0) {
+        AlertFailed.fire({
+          icon: "error",
+          title: `Please select: ${missing.join(" and ")}`,
+        });
+        return;
+      }
 
+      formData.append("product_id", productId);
+      formData.append("user_id", userData?.user_id);
+      formData.append("qty", qty);
+      formData.append("price", price);
+      formData.append("shipping_amount", shippingAmount);
+      formData.append("country", currentAddress.country);
+      formData.append("size", selectedSizes[productId] || "");
+      formData.append("color", selectedColors[productId] || "");
+      formData.append("cart_id", cartID);
+
+      const response = await apiInstance.post("cart-view/", formData);
+
+      const url = userData
+        ? `cart-list/${cartID}/${userData?.user_id}/`
+        : `cart-list/${cartID}/`;
+
+      await apiInstance.get(url).then((res) => {
+        setCartCount(res.data.length);
+      });
+
+      // Alert the user that they have successfully add product to cart
       Toast.fire({
         icon: "success",
-        title: response.data.message
-      })
-      // fetch updated cart items
-      const url = userData ? `cart-list/${userData?.user_id}/` : `cart-list/`
-      apiInstance.get(url).then((res) => {
-        console.log(res.data)
-       
-      })
-      
-      
-  } catch (error) {
-      console.log(error)
-      
-  }
-  }
+        title: response.data.message,
+      });
+    } catch (error) {
+      AlertFailed.fire({
+        icon: "error",
+        title: "Failed to add to cart. Please try again",
+      });
+    }
+  };
+
+  const handleCategoryClick = (categoryId) => {
+    // Navigate to search page with category pre-selected
+    navigate(`/search/?category=${categoryId}`);
+  };
 
   const addToWishlist = async (productId, userId) => {
     try {
-      const formdata = new FormData()
+      const formData = new FormData();
 
-      formdata.append("product_id", productId)
-      formdata.append("user_id", userId)
+      formData.append("product_id", productId);
+      formData.append("user_id", userId);
 
-      const response = await apiInstance.post(`customer/wishlist/${userId}/`, formdata)
+      const response = await apiInstance.post(
+        `customer/wishlist/${userId}/`,
+        formData
+      );
 
-      console.log(response.data)
       Toast.fire({
         icon: "success",
-        title: response.data.message
-      })
-      
+        title: response.data.message,
+      });
     } catch (error) {
-      console.log(error)
+      AlertFailed.fire({
+        icon: "error",
+        title: "Something wrong. Please try again",
+      });
     }
-    
-}
+  };
 
+  // Initialize default selections when products load
+  useEffect(() => {
+    const initialSizes = {};
+    const initialColors = {};
+
+    products?.forEach((p) => {
+      if (p.size?.length > 0) initialSizes[p.id] = p.size[0].name;
+      if (p.color?.length > 0) initialColors[p.id] = p.color[0].name;
+    });
+
+    setSelectedSizes(initialSizes);
+    setSelectedColors(initialColors);
+  }, [products]);
+
+  useEffect(() => {
+    apiInstance.get("products/").then((res) => {
+      setProducts(res.data);
+    });
+  }, []);
+
+  useEffect(() => {
+    apiInstance.get("category/").then((res) => {
+      setCategory(res.data);
+    });
+  }, []);
 
   return (
-  <> 
-    <main className="mt-5">
-    <div className="container">
-      <section className="text-center">
-        <div className="row">
-            {products?.map((p, index) => (
-          <div className="col-lg-4 col-md-12 mb-4" key={index}>
-            <div className="card">
-              <div
-                className="bg-image hover-zoom ripple"
-                data-mdb-ripple-color="light"
-              >
+    <div>
+      <main className="mt-3">
+        <div className="container">
+          <div className="container px-4 py-3">
+            <div className="row flex-lg-row-reverse align-items-center g-5">
+              <div className="col-10 col-sm-8 col-lg-6">
                 <img
-                  src={p.image}
-                  style={{width:"100%", height:"250px", objectFit:"cover"}}
-                  className="w-100"
+                  src="https://www.moradaseniorliving.com/wp-content/uploads/2022/05/a-guide-to-safe-online-shopping-in-your-senior-years.jpg"
+                  className="rounded-1 d-block mx-lg-auto img-fluid"
+                  width="700"
+                  height="500"
+                  loading="lazy"
                 />
-                
               </div>
-              <div className="card-body">
-              <Link to={`/product-detail/${p.slug}`} className="text-reset">
-                  <h5 className="card-title mb-3">{p.title}</h5>
-              </Link>
-                <a href="" className="text-reset">
-                  <p>{p.category?.title}</p>
-                </a>
-                <div className='d-flex justify-content-center'>
-
-                    <h6 className="mb-3">${p.price}</h6>
-                    <h6 className="mb-3 text-muted ms-2">${p.old_price}</h6>
-                </div>
-                <div className="btn-group">
+              <div className="col-lg-6">
+                <h1 className="display-5 fw-bold lh-1 mb-3">
+                  One-Stop Shopping Destination
+                </h1>
+                <p className="lead">
+                  With Upfront, You can find everything you need from a variety
+                  of trusted vendors all in one place. Enjoy a simple, easy, and
+                  enjoyable shopping experience every time you visit.
+                </p>
+                <div className="d-grid gap-2 d-md-flex justify-content-md-start">
                   <button
-                    className="btn btn-primary dropdown-toggle"
                     type="button"
-                    id="dropdownMenuClickable"
-                    data-bs-toggle="dropdown"
-                    data-bs-auto-close="false"
-                    aria-expanded="false"
+                    className="btn btn-warning btn-lg px-4 me-md-2"
                   >
-                    Variation
+                    Start Shopping
                   </button>
-                  <ul
-                    className="dropdown-menu"
-                    aria-labelledby="dropdownMenuClickable"
-                  >
-                    {/* Quantity */}
-                    <div className="d-flex flex-column mb-2 mt-2 p-1">
-                      <div className="p-1 mt-0 pt-0 d-flex flex-wrap">
-                          <>
-                              <li>
-                                  <input
-                                      type="number"
-                                      className='form-control'
-                                      placeholder='Quantity'
-                                      onChange={(e) => handleQtyChange(e, p.id)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr />
+
+          <section>
+            <div className="row py-lg-5 text-center">
+              <div className="col-lg-6 col-md-8 mx-auto">
+                <h1 className="fw-light">Featured Products</h1>
+                <p className="lead text-muted">
+                  Explore our handpicked featured products below—each selected
+                  for its quality and appeal. Find your next favorite item
+                  today!
+                </p>
+              </div>
+            </div>
+            <div className="pt-2 row row-cols-2 row-cols-md-2 row-cols-lg-3 row-cols-xl-5 g-3">
+              {products?.slice(0, 5).map((p, index) => (
+                <div className="col-lg-3 col-md-6 mb-4" key={index}>
+                  <div className="card border rounded h-100 d-flex flex-column">
+                    <Link to={`/detail/${p.slug}/`}>
+                      <div className="ratio ratio-4x3 position-relative">
+                        <img
+                          src={p.image}
+                          className="object-fit-contain"
+                          alt={p.title}
+                        />
+                      </div>
+                    </Link>
+                    <div className="card-body d-flex flex-column">
+                      <Link
+                        className="text-decoration-none"
+                        to={`/detail/${p.slug}/`}
+                      >
+                        <h5
+                          className="card-title mb-3 text-dark"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {p.title}
+                        </h5>
+                      </Link>
+                      <a href="" className="text-reset">
+                        <p>{p.category?.title}</p>
+                      </a>
+                      <h6 className="mb-3 mt-auto">
+                        <s>${p.old_price}</s>
+                        <strong className="ms-2 text-danger">${p.price}</strong>
+                      </h6>
+                      <div className="mt-auto">
+                        {/* Variations Dropdown */}
+                        <div className="btn-group">
+                          {p.size?.length > 0 || p.color?.length > 0 ? (
+                            <>
+                              <div className="d-flex">
+                                <button
+                                  className="btn btn-warning dropdown-toggle flex-grow-1 d-flex"
+                                  type="button"
+                                  id="dropdownMenuClickable"
+                                  data-bs-toggle="dropdown"
+                                  data-bs-auto-close="outside"
+                                  aria-expanded="false"
+                                  style={{
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    width: "100%",
+                                  }}
+                                >
+                                  <span className="me-1">Select</span>
+                                </button>
+                                <ul
+                                  className="dropdown-menu p-3"
+                                  aria-labelledby="dropdownMenuClickable"
+                                  style={{
+                                    width: "280px",
+                                  }}
+                                >
+                                  {/* Quantity Section */}
+                                  <div className="mb-3">
+                                    <label className="form-label">
+                                      <b>Quantity</b>
+                                    </label>
+                                    <input
+                                      className="form-control"
                                       min={1}
-                                      defaultValue={1}
-                                  />
-                              </li>
-                          </>
+                                      type="number"
+                                      placeholder="1"
+                                      onChange={(e) => handleQtyChange(e, p.id)}
+                                    />
+                                  </div>
+
+                                  {/* Variations or Size Options Section */}
+                                  {p.size?.length > 0 && (
+                                    <div className="mb-3">
+                                      <label className="form-label">
+                                        <b>Variation: </b>
+                                        {selectedSizes[p.id] || "Select one"}
+                                      </label>
+                                      <div className="d-flex flex-wrap gap-2">
+                                        {p.size?.map((size, index) => (
+                                          <button
+                                            key={index}
+                                            className={`btn btn-sm ${
+                                              selectedSizes[p.id] === size.name
+                                                ? "btn-warning"
+                                                : "btn-outline-secondary"
+                                            }`}
+                                            onClick={() => {
+                                              handleSizeButton(p.id, size.name);
+                                            }}
+                                          >
+                                            {size.name}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Color Options Section */}
+                                  {p.color?.length > 0 && (
+                                    <div className="mb-3">
+                                      <label className="form-label">
+                                        <b>Color: </b>
+                                        {selectedColors[p.id] ||
+                                          "Select one"}{" "}
+                                      </label>
+                                      <div className="d-flex flex-wrap gap-2">
+                                        {p.color?.map((color, index) => (
+                                          <button
+                                            key={index}
+                                            className={`btn rounded-circle border p-0 ${
+                                              selectedColors[p.id] ===
+                                              color.name
+                                                ? "border-warning border-3"
+                                                : ""
+                                            }`}
+                                            style={{
+                                              width: "30px",
+                                              height: "30px",
+                                              backgroundColor: color.color_code,
+                                            }}
+                                            onClick={() =>
+                                              handleColorButton(
+                                                p.id,
+                                                color.name
+                                              )
+                                            }
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Action Buttons */}
+                                  <div className="d-flex mt-3">
+                                    <button
+                                      type="button"
+                                      className="btn btn-warning flex-grow-1 me-2"
+                                      onClick={() =>
+                                        handleAddToCart(
+                                          p.id,
+                                          p.price,
+                                          p.shipping_amount,
+                                          true,
+                                          p
+                                        )
+                                      }
+                                    >
+                                      <i className="fas fa-shopping-cart me-2" />
+                                      Add to Cart
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        addToWishlist(p.id, userData?.user_id)
+                                      }
+                                      type="button"
+                                      className="btn btn-dark px-3"
+                                    >
+                                      <i className="fas fa-heart" />
+                                    </button>
+                                  </div>
+                                </ul>
+                                <button
+                                  onClick={() =>
+                                    addToWishlist(p.id, userData?.user_id)
+                                  }
+                                  type="button"
+                                  className="btn btn-dark px-3 ms-2"
+                                >
+                                  <i className="fas fa-heart" />
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* If there's no variations on the product 
+                                    Show add to cart button instead */}
+                              <div className="d-flex">
+                                <button
+                                  type="button"
+                                  className="btn btn-warning flex-grow-1 me-2"
+                                  onClick={() =>
+                                    handleAddToCart(
+                                      p.id,
+                                      p.price,
+                                      p.shipping_amount,
+                                      false,
+                                      p
+                                    )
+                                  }
+                                >
+                                  <i className="fas fa-shopping-cart me-2" />
+                                  <span className="d-none d-sm-inline">
+                                    Add to Cart
+                                  </span>
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    addToWishlist(p.id, userData?.user_id)
+                                  }
+                                  type="button"
+                                  className="btn btn-dark px-3"
+                                >
+                                  <i className="fas fa-heart" />
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
+                    </div>
                   </div>
-
-                  {/* Size */}
-                    {p?.size?.length > 0 && 
-
-                    <div className="d-flex flex-column">
-                      <li className="p-1">
-                        <b>Size</b>: {selectedSize[p.id] || 'Select a size'}
-                      </li>
-                      <div className="p-1 mt-0 pt-0 d-flex flex-wrap">
-                        {p.size?.map((size, index) => (
-
-                        
-                          <li>
-                            <button onClick={(e) => handleSizeButtonClick(e,p.id,size.name)} className="btn btn-secondary btn-sm me-2 mb-1">
-                              {size.name}
-                            </button>
-                          </li>
-                        ))}
-                        
-                      </div>
-                    </div>
-                    }
-
-                    {p.color?.length > 0 && 
-                    <div className="d-flex flex-column mt-3">
-                      <li className="p-1">
-                        <b>COlor</b>: {selectedColors[p.id] || 'Select a color'}
-                      </li>
-                      <div className="p-1 mt-0 pt-0 d-flex flex-wrap">
-                        {p?.color?.map((color, index) => (
-                        <li>
-                          <button
-                            className="btn btn-sm me-2 mb-1 p-3"
-                            style={{ backgroundColor: `${color.color_code}` }}
-                            onClick={(e) => handleColorButtonClick(e,p.id,color.name)}
-                          />
-                        </li>
-                        ))}
-                       
-                      </div>
-                    </div>
-                    }
-                    <div className="d-flex mt-3 p-1">
-                      <button
-                        type="button"
-                        className="btn btn-primary me-1 mb-1"
-                        onClick={() =>handleAddToCart(p.id, p.price, p.shipping_amount)}
-                      >
-                        <i className="fas fa-shopping-cart" />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-danger px-3 me-1 mb-1 ms-2"
-                      >
-                        <i className="fas fa-heart" />
-                      </button>
-                    </div>
-                  </ul>
-                  <button
-                    onClick={() => addToWishlist(p.id, userData?.user_id)}
-                    type="button"
-                    className="btn btn-danger px-3 me-1 ms-2"
-                  >
-                    <i className="fas fa-heart" />
-                  </button>
                 </div>
+              ))}
+            </div>
+
+            {/* Category Section */}
+            <div className="row py-lg-5 pt-5 text-center">
+              <div className="col-lg-6 col-md-8 mx-auto">
+                <h1 className="fw-light">Browse Category</h1>
               </div>
             </div>
-          </div>
-          ))}
-
-
-        <div className='row'>
+            <div className="row mt-4">
               {category?.map((c, index) => (
-            <div className="col-lg-2">
-              <img src={c.image} style={{ width: "100px", height: "100px", borderRadius: "50%", objectFit: "cover" }} alt="" />
-              <h6>{c.title}</h6>
+                <div
+                  className="col-lg-2 col-md-3 col-sm-4 col-6 mb-4 text-center"
+                  key={index}
+                  onClick={() => handleCategoryClick(c.id)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <img
+                    src={c.image}
+                    className="object-fit-cover rounded-circle mb-2"
+                    alt={c.title}
+                    style={{
+                      width: "100px",
+                      height: "100px",
+                      objectFit: "cover",
+                    }}
+                  />
+                  <h6>{c.title}</h6>
+                </div>
+              ))}
             </div>
-            ))}
-            
-          </div>
-          
-          
 
+            <div className="pt-2 row row-cols-2 row-cols-md-2 row-cols-lg-3 row-cols-xl-5 g-3 mt-5">
+              {products
+                ?.sort(() => Math.random() - 0.5)
+                .map((p, index) => (
+                  <div className="col-lg-3 col-md-6 mb-4" key={index}>
+                    <div className="card border rounded h-100 d-flex flex-column">
+                      <Link to={`/detail/${p.slug}/`}>
+                        <div className="ratio ratio-4x3 position-relative">
+                          <img
+                            src={p.image}
+                            className="object-fit-contain"
+                            alt={p.title}
+                          />
+                        </div>
+                      </Link>
+                      <div className="card-body d-flex flex-column">
+                        <Link
+                          className="text-decoration-none"
+                          to={`/detail/${p.slug}/`}
+                        >
+                          <h5
+                            className="card-title mb-3 text-dark"
+                            style={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {p.title}
+                          </h5>
+                        </Link>
+                        <a href="" className="text-reset">
+                          <p>{p.category?.title}</p>
+                        </a>
+                        <h6 className="mb-3 mt-auto">
+                          {/* <s>${p.old_price}</s> */}
+                          <strong className="text-dark">
+                            ${p.price}
+                          </strong>
+                        </h6>
+                        <div className="mt-auto">
+                          {/* Variations Dropdown */}
+                          <div className="btn-group">
+                            {p.size?.length > 0 || p.color?.length > 0 ? (
+                              <>
+                                <div className="d-flex">
+                                  <button
+                                    className="btn btn-warning dropdown-toggle flex-grow-1 d-flex"
+                                    type="button"
+                                    id="dropdownMenuClickable"
+                                    data-bs-toggle="dropdown"
+                                    data-bs-auto-close="outside"
+                                    aria-expanded="false"
+                                    style={{
+                                      alignItems: "center",
+                                      justifyContent: "space-between",
+                                      width: "100%",
+                                    }}
+                                  >
+                                    <span className="me-1">Select</span>
+                                  </button>
+                                  <ul
+                                    className="dropdown-menu p-3"
+                                    aria-labelledby="dropdownMenuClickable"
+                                    style={{
+                                      width: "280px",
+                                    }}
+                                  >
+                                    {/* Quantity Section */}
+                                    <div className="mb-3">
+                                      <label className="form-label">
+                                        <b>Quantity</b>
+                                      </label>
+                                      <input
+                                        className="form-control"
+                                        min={1}
+                                        type="number"
+                                        placeholder="1"
+                                        onChange={(e) =>
+                                          handleQtyChange(e, p.id)
+                                        }
+                                      />
+                                    </div>
+
+                                    {/* Variations or Size Options Section */}
+                                    {p.size?.length > 0 && (
+                                      <div className="mb-3">
+                                        <label className="form-label">
+                                          <b>Variation: </b>
+                                          {selectedSizes[p.id] || "Select one"}
+                                        </label>
+                                        <div className="d-flex flex-wrap gap-2">
+                                          {p.size?.map((size, index) => (
+                                            <button
+                                              key={index}
+                                              className={`btn btn-sm ${
+                                                selectedSizes[p.id] ===
+                                                size.name
+                                                  ? "btn-warning"
+                                                  : "btn-outline-secondary"
+                                              }`}
+                                              onClick={() => {
+                                                handleSizeButton(
+                                                  p.id,
+                                                  size.name
+                                                );
+                                              }}
+                                            >
+                                              {size.name}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Color Options Section */}
+                                    {p.color?.length > 0 && (
+                                      <div className="mb-3">
+                                        <label className="form-label">
+                                          <b>Color: </b>
+                                          {selectedColors[p.id] ||
+                                            "Select one"}{" "}
+                                        </label>
+                                        <div className="d-flex flex-wrap gap-2">
+                                          {p.color?.map((color, index) => (
+                                            <button
+                                              key={index}
+                                              className={`btn rounded-circle border p-0 ${
+                                                selectedColors[p.id] ===
+                                                color.name
+                                                  ? "border-warning border-3"
+                                                  : ""
+                                              }`}
+                                              style={{
+                                                width: "30px",
+                                                height: "30px",
+                                                backgroundColor:
+                                                  color.color_code,
+                                              }}
+                                              onClick={() =>
+                                                handleColorButton(
+                                                  p.id,
+                                                  color.name
+                                                )
+                                              }
+                                            />
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Action Buttons */}
+                                    <div className="d-flex mt-3">
+                                      <button
+                                        type="button"
+                                        className="btn btn-warning flex-grow-1 me-2"
+                                        onClick={() =>
+                                          handleAddToCart(
+                                            p.id,
+                                            p.price,
+                                            p.shipping_amount,
+                                            true,
+                                            p
+                                          )
+                                        }
+                                      >
+                                        <i className="fas fa-shopping-cart me-2" />
+                                        Add to Cart
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          addToWishlist(p.id, userData?.user_id)
+                                        }
+                                        type="button"
+                                        className="btn btn-dark px-3"
+                                      >
+                                        <i className="fas fa-heart" />
+                                      </button>
+                                    </div>
+                                  </ul>
+                                  <button
+                                    onClick={() =>
+                                      addToWishlist(p.id, userData?.user_id)
+                                    }
+                                    type="button"
+                                    className="btn btn-dark px-3 ms-2"
+                                  >
+                                    <i className="fas fa-heart" />
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                {/* If there's no variations on the product 
+                                    Show add to cart button instead */}
+                                <div className="d-flex">
+                                  <button
+                                    type="button"
+                                    className="btn btn-warning flex-grow-1 me-2"
+                                    onClick={() =>
+                                      handleAddToCart(
+                                        p.id,
+                                        p.price,
+                                        p.shipping_amount,
+                                        false,
+                                        p
+                                      )
+                                    }
+                                  >
+                                    <i className="fas fa-shopping-cart me-2" />
+                                    <span className="d-none d-sm-inline">
+                                      Add to Cart
+                                    </span>
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      addToWishlist(p.id, userData?.user_id)
+                                    }
+                                    type="button"
+                                    className="btn btn-dark px-3"
+                                  >
+                                    <i className="fas fa-heart" />
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </section>
         </div>
-      </section>
-      {/*Section: Wishlist*/}
+      </main>
     </div>
-    </main>
-  </>
-    
-  )
+  );
 }
 
-export default Products
+export default Products;
