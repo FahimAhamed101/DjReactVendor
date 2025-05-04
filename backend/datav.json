@@ -1,0 +1,16 @@
+[
+{
+  "model": "vendor.vendor",
+  "pk": 1,
+  "fields": {
+    "user": 3,
+    "image": "vendor/016c77475c4a1b0580570a4665dde675.jpg_720x720q80.jpg",
+    "name": "Tomshop",
+    "description": "Shop",
+    "mobile": "01706617723",
+    "active": true,
+    "date": "2025-05-04T10:07:10.854Z",
+    "slug": "tomshop"
+  }
+}
+]

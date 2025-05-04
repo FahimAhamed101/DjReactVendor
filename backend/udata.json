@@ -1,0 +1,116 @@
+[
+{
+  "model": "userauths.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$ZqCaVgg6pwJiOjRhfxtReq$DscJ38JjNfjnSGBdp/ahqt0XsCOG5jwpkv31TcNmsuU=",
+    "last_login": "2025-05-04T09:23:38.343Z",
+    "is_superuser": true,
+    "first_name": "",
+    "last_name": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-05-03T19:01:32.519Z",
+    "username": "admin",
+    "email": "admin@admin.com",
+    "full_name": "admin",
+    "phone": null,
+    "otp": null,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "userauths.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$0tYYJd8gKnoHH0jbF3wMkM$GH5Yr/vImo5ySIEEXLquNy2VB4+LIUSDCXiy4Rr7ypg=",
+    "last_login": null,
+    "is_superuser": false,
+    "first_name": "",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-05-03T19:33:06.171Z",
+    "username": "admin11",
+    "email": "admin11@gmail.com",
+    "full_name": "adin",
+    "phone": "01706617723",
+    "otp": null,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "userauths.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$Ck6zzMFQzqL6fpWXxPdHEj$MAP0Q7khbRkoItT+2i9ImUzYme0D624dF+BC0/Yz7fg=",
+    "last_login": null,
+    "is_superuser": false,
+    "first_name": "",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-05-04T10:03:51.585Z",
+    "username": "adminuser",
+    "email": "adminuser@gmail.com",
+    "full_name": "Tom",
+    "phone": "01706617723",
+    "otp": null,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "userauths.profile",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "image": "default/default_avatar.jpg",
+    "full_name": "admin",
+    "about": null,
+    "gender": null,
+    "country": null,
+    "state": null,
+    "city": null,
+    "address": null,
+    "date": "2025-05-03T19:01:33.703Z",
+    "pid": "ibbknlbkii"
+  }
+},
+{
+  "model": "userauths.profile",
+  "pk": 2,
+  "fields": {
+    "user": 2,
+    "image": "default/default_avatar.jpg",
+    "full_name": "adin",
+    "about": null,
+    "gender": null,
+    "country": null,
+    "state": null,
+    "city": null,
+    "address": null,
+    "date": "2025-05-03T19:33:06.178Z",
+    "pid": "ebcdaeddjh"
+  }
+},
+{
+  "model": "userauths.profile",
+  "pk": 3,
+  "fields": {
+    "user": 3,
+    "image": "default/default_avatar.jpg",
+    "full_name": "Tom",
+    "about": null,
+    "gender": null,
+    "country": null,
+    "state": null,
+    "city": null,
+    "address": null,
+    "date": "2025-05-04T10:03:51.590Z",
+    "pid": "bgnnnhecig"
+  }
+}
+]

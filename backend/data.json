@@ -1,0 +1,55 @@
+[
+{
+  "model": "store.category",
+  "pk": 1,
+  "fields": {
+    "title": "laptop",
+    "image": "category/kari-shea-1SAnrIxw5OY-unsplash.jpg",
+    "active": true,
+    "slug": "laptop"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 1,
+  "fields": {
+    "title": "laptop",
+    "image": "products/kari-shea-1SAnrIxw5OY-unsplash.jpg",
+    "description": "laptops",
+    "category": 1,
+    "price": "200.00",
+    "old_price": "150.00",
+    "shipping_amount": "400.00",
+    "stock_qty": 1,
+    "in_stock": true,
+    "status": "published",
+    "featured": true,
+    "views": 0,
+    "rating": 0,
+    "vendor": 1,
+    "pid": "h1513c1bgi",
+    "slug": "laptop",
+    "date": "2025-05-04T10:07:51.669Z"
+  }
+},
+{
+  "model": "store.cart",
+  "pk": 1,
+  "fields": {
+    "product": 1,
+    "user": null,
+    "qty": 1,
+    "price": "200.00",
+    "sub_total": "200.00",
+    "shipping_amount": "400.00",
+    "service_fee": "10.00",
+    "tax_fee": "0.00",
+    "total": "610.00",
+    "country": "undefined",
+    "size": "",
+    "color": "",
+    "cart_id": "o31np5SO2FTwfirScqqlwff6inD0a3",
+    "date": "2025-05-04T10:08:31.854Z"
+  }
+}
+]
