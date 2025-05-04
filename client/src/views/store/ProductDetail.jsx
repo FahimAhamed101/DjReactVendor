@@ -19,7 +19,6 @@ function ProductDetail() {
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("specifications");
-  const [review, setReview] = useState({ rating: 5, comment: "" });
   const [question, setQuestion] = useState({ name: "", content: "" });
 
   const [cartCount, setCartCount] = useContext(CartContext);
@@ -27,9 +26,9 @@ function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [createReview, setCreateReview] = useState({
     user_id: 0,
-    product_id: product?.id,
+    product_id: 0,
     review: "",
-    rating: 0,
+    rating: 5,
   });
 
   const param = useParams();
@@ -42,14 +41,28 @@ function ProductDetail() {
   }, []);
 
   useEffect(() => {
-    apiInstance.get(`products/${param.slug}/`).then((res) => {
-      setProduct(res.data);
-      setSpecifications(res.data.specification);
-      setGallery(res.data.gallery);
-      setSelectedImage(res.data.image);
-      setSelectedSize(res.data.size[0]?.name || "");
-      setSelectedColor(res.data.color[0]?.name || "");
-    });
+    const fetchProduct = async () => {
+      try {
+        const response = await apiInstance.get(`products/${param.slug}/`);
+        const productData = response.data;
+        setProduct(productData);
+        setSpecifications(productData.specification || []);
+        setGallery(productData.gallery || []);
+        setSelectedImage(productData.image);
+        setSelectedSize(productData.size?.[0]?.name || "");
+        setSelectedColor(productData.color?.[0]?.name || "");
+        
+        // Update createReview with the product ID
+        setCreateReview(prev => ({
+          ...prev,
+          product_id: productData.id
+        }));
+      } catch (error) {
+        console.error("Error fetching product:", error);
+      }
+    };
+
+    fetchProduct();
   }, [param.slug]);
 
   const handleImageSelect = (image) => {
@@ -58,10 +71,13 @@ function ProductDetail() {
 
   const handleAddToCart = async () => {
     try {
-      const formData = new FormData();
+      if (!product.id) {
+        throw new Error("Product information not loaded yet");
+      }
 
+      const formData = new FormData();
       formData.append("product_id", product.id);
-      formData.append("user_id", userData?.user_id);
+      formData.append("user_id", userData?.user_id || 0);
       formData.append("qty", quantity);
       formData.append("price", product.price);
       formData.append("shipping_amount", product.shipping_amount);
@@ -76,27 +92,30 @@ function ProductDetail() {
         ? `cart-list/${cart_id}/${userData?.user_id}/`
         : `cart-list/${cart_id}/`;
 
-      await apiInstance.get(url).then((res) => {
-        setCartCount(res.data.length);
-      });
+      const cartResponse = await apiInstance.get(url);
+      setCartCount(cartResponse.data.length);
 
       Toast.fire({
         icon: "success",
-        title: response.data.message,
+        title: response.data.message || "Product added to cart",
       });
     } catch (error) {
+      console.error("Error adding to cart:", error);
       AlertFailed.fire({
         icon: "error",
-        title: error,
+        title: error.response?.data?.message || "Failed to add to cart",
       });
     }
   };
 
   const fetchReviewData = async () => {
-    if (product) {
-      await apiInstance.get(`reviews/${product?.id}/`).then((res) => {
-        setReviews(res.data);
-      });
+    if (product?.id) {
+      try {
+        const response = await apiInstance.get(`reviews/${product.id}/`);
+        setReviews(response.data);
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+      }
     }
   };
 
@@ -105,24 +124,84 @@ function ProductDetail() {
   }, [product]);
 
   const handleReviewChange = (event) => {
+    const { name, value } = event.target;
     setCreateReview({
       ...createReview,
-      [event.target.name]: event.target.value,
+      [name]: name === "rating" ? parseInt(value) : value,
     });
   };
 
-  const handleReviewSubmit = (e) => {
+  const handleReviewSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!createReview.review.trim()) {
+      AlertFailed.fire({
+        icon: "error",
+        title: "Please write a review",
+      });
+      return;
+    }
 
-    const formData = new FormData();
-    formData.append("user_id", userData?.user_id);
-    formData.append("product_id", product?.id);
-    formData.append("rating", createReview.rating);
-    formData.append("review", createReview.review);
+    try {
+      const formData = new FormData();
+      formData.append("user_id", userData?.user_id || 0);
+      formData.append("product_id", product.id);
+      formData.append("rating", createReview.rating);
+      formData.append("review", createReview.review);
 
-    apiInstance.post(`reviews/${product?.id}/`, formData).then((res) => {
-      fetchReviewData();
-    });
+      await apiInstance.post(`reviews/${product.id}/`, formData);
+      
+      // Refresh reviews
+      await fetchReviewData();
+      
+      // Reset form
+      setCreateReview({
+        ...createReview,
+        review: "",
+        rating: 5
+      });
+
+      Toast.fire({
+        icon: "success",
+        title: "Review submitted successfully",
+      });
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      AlertFailed.fire({
+        icon: "error",
+        title: error.response?.data?.message || "Failed to submit review",
+      });
+    }
+  };
+
+  const handleQuestionSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!question.name.trim() || !question.content.trim()) {
+      AlertFailed.fire({
+        icon: "error",
+        title: "Please fill all fields",
+      });
+      return;
+    }
+
+    try {
+      // Here you would typically send the question to your backend
+      // For now, we'll just show a success message
+      Toast.fire({
+        icon: "success",
+        title: "Question submitted successfully",
+      });
+      
+      // Reset form
+      setQuestion({ name: "", content: "" });
+    } catch (error) {
+      console.error("Error submitting question:", error);
+      AlertFailed.fire({
+        icon: "error",
+        title: "Failed to submit question",
+      });
+    }
   };
 
   return (
@@ -200,9 +279,12 @@ function ProductDetail() {
                   </Link>
                 </li>
                 <li className="breadcrumb-item">
-                  <a href="#" className="text-decoration-none text-muted small">
+                  <Link
+                    to={`/category/${product.category?.slug}`}
+                    className="text-decoration-none text-muted small"
+                  >
                     {product.category?.title}
-                  </a>
+                  </Link>
                 </li>
                 <li className="breadcrumb-item text-muted" aria-current="page">
                   {product.title}
@@ -223,7 +305,7 @@ function ProductDetail() {
                 {"☆".repeat(5 - Math.round(product.product_rating || 0))}
               </div>
               <span className="text-muted small">
-                ({product.rating_count} reviews)
+                ({product.rating_count || 0} reviews)
               </span>
             </div>
 
@@ -236,30 +318,33 @@ function ProductDetail() {
 
             <p className="text-muted small mb-4">{product.description}</p>
 
-            <div className="mb-4">
-              <div className="d-flex gap-2">
-                {product.size?.map((size, index) => (
-                  <button
-                    key={index}
-                    className={`btn btn-sm ${
-                      selectedSize === size.name
-                        ? "btn-warning"
-                        : "btn-outline-secondary"
-                    }`}
-                    style={{ WebkitTransition: "all 0.2s ease" }}
-                    onClick={() => setSelectedSize(size.name)}
-                  >
-                    {size.name}
-                  </button>
-                ))}
+            {product.size?.length > 0 && (
+              <div className="mb-4">
+                <h6 className="mb-2 small fw-bold">Size: {selectedSize}</h6>
+                <div className="d-flex gap-2">
+                  {product.size.map((size, index) => (
+                    <button
+                      key={index}
+                      className={`btn btn-sm ${
+                        selectedSize === size.name
+                          ? "btn-warning"
+                          : "btn-outline-secondary"
+                      }`}
+                      style={{ WebkitTransition: "all 0.2s ease" }}
+                      onClick={() => setSelectedSize(size.name)}
+                    >
+                      {size.name}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {product.color?.length > 0 && (
               <div className="mb-4">
                 <h6 className="mb-2 small fw-bold">Color: {selectedColor}</h6>
                 <div className="d-flex gap-2">
-                  {product.color?.map((color, index) => (
+                  {product.color.map((color, index) => (
                     <button
                       key={index}
                       className={`btn rounded-circle p-3 border ${
@@ -386,7 +471,7 @@ function ProductDetail() {
               </div>
             )}
 
-            {activeTab === "vendor" && (
+            {activeTab === "vendor" && product.vendor && (
               <div className="row justify-content-center">
                 <div className="col-md-8">
                   <div className="card border-0.5 text-center border-light">
@@ -396,18 +481,18 @@ function ProductDetail() {
                         style={{ width: "120px", height: "120px" }}
                       >
                         <img
-                          src={product.vendor?.image}
+                          src={product.vendor.image}
                           style={{
                             width: "100%",
                             height: "100%",
                             objectFit: "cover",
                           }}
-                          alt={product.vendor?.name}
+                          alt={product.vendor.name}
                         />
                       </div>
-                      <h5 className="mb-2">{product.vendor?.name}</h5>
+                      <h5 className="mb-2">{product.vendor.name}</h5>
                       <p className="text-muted small mb-3">
-                        {product.vendor?.description}
+                        {product.vendor.description}
                       </p>
                       <div className="d-flex justify-content-center gap-2">
                         <button className="btn btn-warning">Follow</button>
@@ -430,13 +515,14 @@ function ProductDetail() {
                         <select
                           className="form-select form-select-sm"
                           name="rating"
+                          value={createReview.rating}
                           onChange={handleReviewChange}
                         >
-                          <option value={"1"}>1 Star</option>
-                          <option value={"2"}>2 Star</option>
-                          <option value={"3"}>3 Star</option>
-                          <option value={"4"}>4 Star</option>
-                          <option value={"5"}>5 Star</option>
+                          <option value="1">1 Star</option>
+                          <option value="2">2 Star</option>
+                          <option value="3">3 Star</option>
+                          <option value="4">4 Star</option>
+                          <option value="5">5 Star</option>
                         </select>
                       </div>
                       <div className="mb-3">
@@ -446,6 +532,7 @@ function ProductDetail() {
                           rows="3"
                           required
                           name="review"
+                          value={createReview.review}
                           onChange={handleReviewChange}
                           placeholder="Share your experience..."
                         ></textarea>
@@ -454,6 +541,7 @@ function ProductDetail() {
                         type="submit"
                         onClick={handleReviewSubmit}
                         className="btn btn-warning btn-sm"
+                        disabled={!createReview.review.trim()}
                       >
                         Submit Review
                       </button>
@@ -461,48 +549,54 @@ function ProductDetail() {
                   </div>
                 </div>
                 <div className="col-md-6">
-                  <div className="d-flex flex-column gap-3">
-                    {reviews
-                      ?.sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by date in descending order
-                      .map((r, index) => (
-                        <div
-                          key={index}
-                          className="card border-0.5 border-light"
-                        >
-                          <div className="card-body p-3">
-                            <div className="d-flex align-items-center mb-2">
-                              <img
-                                src={r.profile?.image}
-                                className="rounded-circle me-2"
-                                alt="User"
-                                style={{
-                                  width: "40px",
-                                  height: "40px",
-                                  objectFit: "cover",
-                                }}
-                              />
-                              <div>
-                                <h6 className="mb-0 small">
-                                  {r.profile?.full_name}
-                                </h6>
-                                <div
-                                  className="text-warning"
-                                  style={{ fontSize: "0.8rem" }}
-                                >
-                                  {"★".repeat(r.rating)}
+                  {reviews.length > 0 ? (
+                    <div className="d-flex flex-column gap-3">
+                      {reviews
+                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                        .map((r, index) => (
+                          <div
+                            key={index}
+                            className="card border-0.5 border-light"
+                          >
+                            <div className="card-body p-3">
+                              <div className="d-flex align-items-center mb-2">
+                                <img
+                                  src={r.profile?.image}
+                                  className="rounded-circle me-2"
+                                  alt="User"
+                                  style={{
+                                    width: "40px",
+                                    height: "40px",
+                                    objectFit: "cover",
+                                  }}
+                                />
+                                <div>
+                                  <h6 className="mb-0 small">
+                                    {r.profile?.full_name}
+                                  </h6>
+                                  <div
+                                    className="text-warning"
+                                    style={{ fontSize: "0.8rem" }}
+                                  >
+                                    {"★".repeat(r.rating)}
+                                  </div>
                                 </div>
+                                <small className="text-muted ms-auto">
+                                  {moment(r.date).format(
+                                    "dddd, D MMMM, YYYY, h:mm A"
+                                  )}
+                                </small>
                               </div>
-                              <small className="text-muted ms-auto">
-                                {moment(r.date).format(
-                                  "dddd, D MMMM, YYYY, h:mm A"
-                                )}
-                              </small>
+                              <p className="small mb-0">{r.review}</p>
                             </div>
-                            <p className="small mb-0">{r.review}</p>
                           </div>
-                        </div>
-                      ))}
-                  </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="alert alert-info">
+                      No reviews yet. Be the first to review!
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -542,7 +636,11 @@ function ProductDetail() {
                           placeholder="What would you like to know?"
                         ></textarea>
                       </div>
-                      <button className="btn btn-warning btn-sm">
+                      <button 
+                        className="btn btn-warning btn-sm"
+                        onClick={handleQuestionSubmit}
+                        disabled={!question.name.trim() || !question.content.trim()}
+                      >
                         Submit Question
                       </button>
                     </div>
