@@ -9,16 +9,20 @@ import ForgetPassword from './views/auth/ForgetPassword'
 import CreatePassword from './views/auth/CreatePassword'
 import Account from './views/customer/Account'
 import StoredHeader from './views/base/StoredHeader'
+import StoredFooter from './views/base/StoreFooter'
 import MainWrapper from './views/base/MainWrapper'
 import ProductDetail from './views/store/ProductDetail'
 import PrivateRoute from './layout/PrivateRoute'
 import Dashboard from './views/vendor/Dashboard'
 import Cart from './views/store/Cart'
+import Checkout from './views/store/Checkout';
 import { CartContext } from './views/plugin/Context'
 import CartID from './views/plugin/CartID'
 import UserData from './views/plugin/UserData'
 import apiInstance from "./utils/axios";
 import Search from './views/store/Search'
+import PaymentSuccess from "./views/store/PaymentSuccess";
+
 function App() {
 
  const [count, setCount] = useState(0)
@@ -47,7 +51,12 @@ function App() {
         <Route path='/' element={<Products />} />
                           
         <Route path="/detail/:slug/" element={<ProductDetail />} /> 
-        <Route path='/cart' element={<Cart />} />                 
+        <Route path='/cart' element={<Cart />} />  
+        <Route path="/checkout/:order_oid/" element={<Checkout />} />
+            <Route
+              path="/payment-success/:order_oid/"
+              element={<PaymentSuccess />}
+            />              
         <Route path='/register' element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path='/logout' element={<Logout />} />
@@ -56,7 +65,9 @@ function App() {
         <Route path='/customer/account/' element={<Account />} />
         <Route path='/vendor/dashboard/' element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path='/search/' element={<Search />} />
+       
         </Routes> 
+        <StoredFooter />
          </MainWrapper>
      </Router>
      </CartContext.Provider>
